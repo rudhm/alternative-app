@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', authMiddleware, express.static(uploadDir));
 
-const ROOM_KEY = process.env.ROOM_KEY || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('ROOM_KEY required in production') })() : 'ah');
+const ROOM_KEY = 'ah';
 
 // Ensure seed users exist
 async function initDb() {
