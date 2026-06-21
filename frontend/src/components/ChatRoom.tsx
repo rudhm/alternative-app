@@ -8,6 +8,8 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { Send, Paperclip, Smile, X, Sun, Moon, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { MessageBubble } from "./MessageBubble";
+import { MessageInputBar } from "./MessageInputBar";
 
 const vibrate = (pattern: number | number[]) => {
   if (typeof navigator !== "undefined" && navigator.vibrate) {
@@ -18,7 +20,6 @@ const vibrate = (pattern: number | number[]) => {
 export function ChatRoom() {
   const { userId, status, lastMessage, sendMessage, token } = useWs();
   const [messages, setMessages] = useState<any[]>([]);
-  const [text, setText] = useState("");
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -34,7 +35,6 @@ export function ChatRoom() {
   const pressTimer = useRef<NodeJS.Timeout | null>(null);
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const myTypingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [otherStatus, setOtherStatus] = useState<"online" | "offline">("offline");
   const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
@@ -207,15 +207,15 @@ export function ChatRoom() {
     if (pressTimer.current) clearTimeout(pressTimer.current);
   };
 
-  const toggleReaction = (msgId: string, emoji: string) => {
+  const toggleReaction = useCallback((msgId: string, emoji: string) => {
     sendMessage({ type: "reaction", payload: { messageId: msgId, emoji } });
     setActiveReactionId(null);
     vibrate(10);
-  };
+  }, [sendMessage]);
 
   const lastTapRef = useRef<{ time: number, msgId: string } | null>(null);
 
-  const handleTap = (msgId: string) => {
+  const handleTap = useCallback((msgId: string) => {
     const now = Date.now();
     const lastTap = lastTapRef.current;
     if (lastTap && lastTap.msgId === msgId && now - lastTap.time < 350) {
@@ -229,7 +229,7 @@ export function ChatRoom() {
     } else {
       lastTapRef.current = { time: now, msgId };
     }
-  };
+  }, [messages, userId, toggleReaction]);
 
   const virtualizer = useVirtualizer({
     count: messages.length,
@@ -256,7 +256,11 @@ export function ChatRoom() {
     }
   }, [messages.length, virtualizer]);
 
-  const handleSend = () => {
+    const handleTyping = useCallback(() => {
+    sendMessage({ type: "typing", payload: {} });
+  }, [sendMessage]);
+
+  const handleSend = useCallback((text: string) => {
     if (!text.trim()) return;
     
     const msgId = `loc-${Date.now()}`;
@@ -277,10 +281,8 @@ export function ChatRoom() {
 
     isAtBottom.current = true;
     sendMessage({ type: "chat", payload });
-    setText("");
     setReplyingTo(null);
     vibrate(10);
-    inputRef.current?.focus();
 
     // Optimistic rollback: if server doesn't ACK within 5s, mark as failed
     setTimeout(() => {
@@ -295,9 +297,9 @@ export function ChatRoom() {
         return prev;
       });
     }, 5000);
-  };
+  }, [replyingTo, sendMessage, userId]);
 
-  const retryMessage = (msg: any) => {
+  const retryMessage = useCallback((msg: any) => {
     setMessages(prev =>
       prev.map(m => m.id === msg.id ? { ...m, failed: false, pending: true } : m)
     );
@@ -314,11 +316,9 @@ export function ChatRoom() {
         return prev;
       });
     }, 5000);
-  };
+  }, [sendMessage]);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -375,7 +375,7 @@ export function ChatRoom() {
     } catch (err) {
       console.error("Upload failed", err);
     }
-  };
+  }, [replyingTo, sendMessage, userId]);
 
   const formatLastSeen = (isoStr: string) => {
     const d = new Date(isoStr);
@@ -464,7 +464,7 @@ export function ChatRoom() {
 
       <div 
         ref={parentRef}
-        className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 pb-28 select-none [-webkit-touch-callout:none]"
+        className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 pb-28 select-none [-webkit-touch-callout:none]" style={{ overscrollBehavior: "contain" }}
         onScroll={handleScroll}
       >
         {isLoadingMore && (
@@ -499,219 +499,30 @@ export function ChatRoom() {
                   zIndex: messages.length - vItem.index,
                 }}
               >
-                <motion.div 
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={{ left: 0.2, right: 0.2 }}
-                  onDragEnd={(e, info) => {
-                    if (Math.abs(info.offset.x) > 40) {
-                      setReplyingTo(msg);
-                      vibrate(20);
-                    }
-                  }}
-                  initial={isNew ? { opacity: 0, scale: 0.5, y: 20 } : false}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  style={{ originX: isMe ? 1 : 0, originY: 1 }}
-                  className={cn(
-                    "max-w-[82%] sm:max-w-[72%] leading-relaxed relative cursor-pointer",
-                    isOnlyEmoji ? "px-3 pb-1.5 pt-2 text-4xl" : "px-3.5 py-2.5 text-[15px]",
-                    msg.reactions && msg.reactions.length > 0 && "mb-5",
-                    isMe 
-                      ? "bg-[var(--color-accent)] text-white rounded-[20px] rounded-br-md shadow-[var(--shadow-md)]" 
-                      : "bg-[var(--color-surface)] text-[var(--color-text)] rounded-[20px] rounded-tl-md shadow-[var(--shadow-sm)] border border-[var(--color-border)]",
-                    msg.pending && "opacity-60",
-                    activeReactionId === msg.id && "ring-2 ring-[var(--color-accent)]/40"
-                  )}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    vibrate([20]);
-                    setActiveReactionId(msg.id);
-                  }}
-                  onClick={() => handleTap(msg.id)}
-                  onTouchStart={() => handlePressStart(msg.id)}
-                  onTouchEnd={handlePressEnd}
-                  onTouchMove={handlePressEnd}
-                  onMouseDown={() => handlePressStart(msg.id)}
-                  onMouseUp={handlePressEnd}
-                  onMouseLeave={handlePressEnd}
-                >
-                  {msg.replyTo && (
-                    <div className={cn(
-                      "flex flex-col text-[13px] border-l-2 px-2.5 py-1.5 mb-2 rounded-r-md cursor-pointer overflow-hidden",
-                      isMe ? "bg-white/15 border-white/50 text-white/90" : "bg-[var(--color-accent-muted)] border-[var(--color-accent)] text-[var(--color-text-secondary)]"
-                    )}>
-                      <span className={cn("font-semibold text-[10px] uppercase mb-0.5", isMe ? "text-white/80" : "text-[var(--color-accent)]")}>
-                        {msg.replyTo.authorId}
-                      </span>
-                      <span className="truncate">{msg.replyTo.content || "Media"}</span>
-                    </div>
-                  )}
-                  {msg.media?.map((m: any, i: number) => (
-                    <div key={i} className="mb-2">
-                      {m.type === 'image' ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={m.url} alt="media" className="rounded-lg max-w-full max-h-64 object-cover border border-white/10" />
-                      ) : (
-                        <a href={m.url} target="_blank" rel="noreferrer" className="block text-sm break-all underline decoration-current/30 underline-offset-4">{m.url}</a>
-                      )}
-                    </div>
-                  ))}
-                  <div className="flex flex-row items-end justify-between gap-3 mt-0.5 min-w-0">
-                    <p className="break-words whitespace-pre-wrap min-w-0">{msg.content}</p>
-                    <div className={cn("flex items-center text-[10px] space-x-1 font-medium flex-shrink-0 pt-1", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
-                      <span>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      {isMe && (
-                        <span className="flex items-center ml-0.5 text-[11.5px]">
-                          {msg.failed ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); retryMessage(msg); }}
-                              aria-label="Retry sending message"
-                              className="flex items-center space-x-0.5 text-red-300 hover:text-white transition-colors"
-                            >
-                              <RotateCcw size={10} />
-                              <span className="text-[9px]">Failed</span>
-                            </button>
-                          ) : msg.pending ? (
-                            <span className="opacity-70">◷</span>
-                          ) : msg.readReceipt ? (
-                            <motion.span key="read" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="text-white font-bold leading-none">✓✓</motion.span>
-                          ) : (
-                            <motion.span key="sent" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="opacity-70 leading-none">✓</motion.span>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {msg.reactions && msg.reactions.length > 0 && (
-                    <div className="absolute -bottom-2.5 flex flex-wrap gap-1 z-30" style={{ [isMe ? 'right' : 'left']: '15px' }}>
-                      {Object.entries(
-                        msg.reactions.reduce((acc: any, r: any) => {
-                          if (!acc[r.emoji]) acc[r.emoji] = { count: 0, me: false };
-                          acc[r.emoji].count++;
-                          if (r.userId === userId) acc[r.emoji].me = true;
-                          return acc;
-                        }, {})
-                      ).map(([emoji, data]: [string, any]) => (
-                        <button
-                          key={emoji}
-                          aria-label={`${data.me ? 'Remove' : 'Add'} ${emoji} reaction`}
-                          onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, emoji); }}
-                          className={cn(
-                            "text-xs w-6 h-6 flex items-center justify-center rounded-full border transition-colors shadow-[var(--shadow-sm)]",
-                            data.me 
-                              ? "border-[var(--color-accent)]/30 bg-[var(--color-accent-muted)] text-[var(--color-accent)]" 
-                              : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-muted)]"
-                          )}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
+                <MessageBubble 
+                  msg={msg}
+                  userId={userId}
+                  isNew={isNew}
+                  activeReactionId={activeReactionId}
+                  onSetReplyingTo={setReplyingTo}
+                  onSetActiveReactionId={setActiveReactionId}
+                  onRetryMessage={retryMessage}
+                  onToggleReaction={toggleReaction}
+                  onVibrate={vibrate}
+                />
               </motion.div>
             );
           })}
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 w-full px-3 pt-2 safe-bottom z-20 pointer-events-none">
-        <div className="max-w-full mx-auto pointer-events-auto">
-          {replyingTo && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-center justify-between mb-2 px-3 py-2.5 bg-[var(--color-surface-overlay)] backdrop-blur-md rounded-lg border border-[var(--color-border)] shadow-[var(--shadow-md)] mx-1"
-          >
-            <div className="flex items-center space-x-2.5 overflow-hidden">
-              <div className="w-1 h-8 bg-[var(--color-accent)] rounded-full flex-shrink-0" />
-              <div className="flex flex-col overflow-hidden">
-                <span className="text-[var(--color-accent)] dark:text-[var(--color-accent-light)] font-semibold text-[10px] uppercase mb-0.5">Reply to {replyingTo.authorId}</span>
-                <span className="text-[var(--color-text-secondary)] truncate text-[13px]">{replyingTo.content || "Media"}</span>
-              </div>
-            </div>
-            <button 
-              aria-label="Cancel reply"
-              className="w-8 h-8 flex items-center justify-center bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-accent-muted)] rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors flex-shrink-0"
-              onClick={() => setReplyingTo(null)}
-            >
-              <X size={14} strokeWidth={2.5} />
-            </button>
-          </motion.div>
-        )}
-        <div 
-          className="flex items-center w-full min-h-[52px] px-2 py-1.5 rounded-full border border-[var(--color-border)] shadow-[var(--shadow-md)] bg-[var(--color-surface-raised)] backdrop-blur-md relative z-10"
-        >
-          <button 
-            aria-label="Attach file"
-            className="w-10 h-10 flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors active:scale-[0.94] flex-shrink-0"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip size={20} />
-          </button>
-          <input 
-            type="file" 
-            className="hidden" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload} 
-            accept="image/*,video/*,audio/*,application/pdf"
-          />
-          
-          <input
-            type="text"
-            ref={inputRef}
-            name="chatMessage"
-            id="chat-input"
-            autoComplete="nope"
-            autoCorrect="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            data-1p-ignore="true"
-            data-lpignore="true"
-            className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus-visible:outline-none px-2 text-[var(--color-text)] text-[15px] placeholder:text-[var(--color-text-muted)] py-2 min-w-0"
-            style={{ boxShadow: 'none' }}
-            placeholder="Message..."
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              if (!myTypingTimeoutRef.current) {
-                sendMessage({ type: "typing", payload: {} });
-                myTypingTimeoutRef.current = setTimeout(() => {
-                  myTypingTimeoutRef.current = null;
-                }, 1500);
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSend();
-            }}
-          />
-
-          <button 
-            aria-label="Emoji picker"
-            className="w-10 h-10 flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors active:scale-[0.94] flex-shrink-0"
-          >
-            <Smile size={20} />
-          </button>
-
-          <button 
-            onClick={handleSend}
-            onMouseDown={(e) => e.preventDefault()}
-            aria-label="Send message"
-            className={cn(
-              "w-9 h-9 ml-1 rounded-full flex items-center justify-center transition-all active:scale-[0.94] flex-shrink-0",
-              text.trim() ? "bg-[var(--color-accent)] text-white shadow-[var(--shadow-sm)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]"
-            )}
-          >
-            <Send size={16} className={cn(text.trim() && "ml-0.5")} />
-          </button>
-        </div>
-        </div>
-      </div>
+      <MessageInputBar
+        replyingTo={replyingTo}
+        onCancelReply={() => setReplyingTo(null)}
+        onSend={handleSend}
+        onTyping={handleTyping}
+        onFileUpload={handleFileUpload}
+      />
     </div>
   );
 }
