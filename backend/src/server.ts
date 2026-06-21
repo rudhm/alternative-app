@@ -42,14 +42,7 @@ const loginLimiter = rateLimit({
 
 app.post('/api/auth/login', loginLimiter, async (req, res) => {
   console.log("LOGIN HIT LOCAL", req.body);
-  const { roomKey, userId } = req.body;
-  
-  const setting = await prisma.setting.findUnique({ where: { key: 'ROOM_KEY' } });
-  const expectedKey = setting?.value || 'ah';
-
-  if (roomKey !== expectedKey) {
-    return res.status(401).json({ error: "Ah ah ah, you didn't say the magic word! 🦖" });
-  }
+  const { userId } = req.body;
   if (userId !== 'Hasi' && userId !== 'Rudh') {
     return res.status(400).json({ error: 'Invalid user ID' });
   }
