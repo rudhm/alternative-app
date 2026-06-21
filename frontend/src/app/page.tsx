@@ -10,8 +10,6 @@ import { Playfair_Display, Inter } from "next/font/google";
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["400", "500", "600"] });
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500"] });
 
-const GREETINGS = ["We missed you", "Welcome back", "Hello again", "Just the two of us"];
-
 // Canvas Starfield Component
 const Starfield = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -125,17 +123,9 @@ export default function Home() {
   const [error, setError] = useState("");
   const [isChecking, setIsChecking] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
-  const [greetingIdx, setGreetingIdx] = useState(0);
   const [rememberMe, setRememberMe] = useState(false);
   const [shakeKey, setShakeKey] = useState(0);
   const { userId, connect } = useWs();
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGreetingIdx((prev) => (prev + 1) % GREETINGS.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -286,18 +276,14 @@ export default function Home() {
           </div>
           
           <div className="h-[20px] overflow-hidden relative mt-1">
-            <AnimatePresence mode="popLayout">
-              <motion.p
-                key={greetingIdx}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.5 }}
-                className="text-sm font-medium text-rose-200/60 tracking-wider"
-              >
-                {GREETINGS[greetingIdx]}
-              </motion.p>
-            </AnimatePresence>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-sm font-medium text-rose-200/60 tracking-wider"
+            >
+              Top secret
+            </motion.p>
           </div>
           
           <div className="flex items-center justify-center space-x-2 mt-4 opacity-40">
@@ -338,7 +324,7 @@ export default function Home() {
                 htmlFor="credential"
                 className="absolute left-5 top-4 text-slate-400 text-[15px] transition-all duration-300 peer-focus:-translate-y-2.5 peer-focus:text-xs peer-focus:text-rose-300/80 peer-[:not(:placeholder-shown)]:-translate-y-2.5 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-rose-300/80 pointer-events-none"
               >
-                Whisper it...
+                Who goes there?
               </label>
             </div>
           </div>
