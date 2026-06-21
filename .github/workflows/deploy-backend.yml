@@ -22,11 +22,10 @@ jobs:
           key: ${{ secrets.ORACLE_SSH_KEY }}
           script: |
             # Navigate to the folder where your code lives on the Oracle server
-            # Note: You may need to update this path!
-            cd ~/code/alternative
+            cd /home/ubuntu/cloud-messenger
             
             # Pull the latest changes from GitHub
             git pull origin master
             
             # Rebuild and restart the backend Docker container
-            docker-compose up -d --build backend
+            docker compose up -d --build backend
