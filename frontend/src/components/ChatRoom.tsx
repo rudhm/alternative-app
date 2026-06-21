@@ -107,8 +107,18 @@ export function ChatRoom() {
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (index) => items[index].type === "date_separator" ? 40 : 60,
-    overscan: 10,
+    estimateSize: (index) => {
+      const item = items[index];
+      if (item.type === "date_separator") return 40;
+      let size = 60; // base size
+      if (item.media && item.media.length > 0) size += 200; // image estimate
+      if (item.replyTo) size += 40; // reply box estimate
+      if (item.content && item.content.length > 50) {
+        size += Math.floor((item.content.length - 50) / 40) * 20; // text wrap estimate
+      }
+      return size;
+    },
+    overscan: 25,
   });
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -256,6 +266,7 @@ export function ChatRoom() {
                 style={{
                   transform: `translateY(${vItem.start}px)`,
                   zIndex: items.length - vItem.index,
+                  willChange: "transform",
                 }}
               >
                 <MessageBubble 
