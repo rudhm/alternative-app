@@ -130,6 +130,13 @@ export default function Home() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        const storedToken = localStorage.getItem('chat_token');
+        const storedUserId = localStorage.getItem('chat_userId');
+        if (storedToken && storedUserId) {
+          connect(storedUserId, storedToken);
+          return;
+        }
+
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://rudhasi.mooo.com";
         const res = await fetch(`${apiUrl}/api/auth/me`, { credentials: "include" });
         if (res.ok) {
@@ -186,6 +193,12 @@ export default function Home() {
       }
       
       const data = await res.json();
+      
+      if (rememberMe && selectedUserId) {
+        localStorage.setItem('chat_token', data.token || "");
+        localStorage.setItem('chat_userId', selectedUserId);
+      }
+      
       connect(selectedUserId, data.token || "");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Authentication failed');

@@ -7,9 +7,11 @@ interface MessageBubbleProps {
   msg: any;
   userId: string | null;
   isNew: boolean;
+  isGroupStart?: boolean;
+  isGroupEnd?: boolean;
   activeReactionId: string | null;
   onSetReplyingTo: (msg: any) => void;
-  onSetActiveReactionId: (id: string | null) => void;
+  onSetActiveReactionId: (id: string | null, pos?: { top: number, isMe: boolean }) => void;
   onRetryMessage: (msg: any) => void;
   onToggleReaction: (msgId: string, emoji: string) => void;
   onVibrate: (pattern: number | number[]) => void;
@@ -19,6 +21,8 @@ export const MessageBubble = React.memo(({
   msg,
   userId,
   isNew,
+  isGroupStart,
+  isGroupEnd,
   activeReactionId,
   onSetReplyingTo,
   onSetActiveReactionId,
@@ -30,13 +34,15 @@ export const MessageBubble = React.memo(({
   const isOnlyEmoji = msg.content && /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s]+$/u.test(msg.content);
 
   const pressTimer = useRef<NodeJS.Timeout | null>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
 
   const handlePressStart = useCallback(() => {
     pressTimer.current = setTimeout(() => {
       onVibrate([20]);
-      onSetActiveReactionId(msg.id);
+      const rect = bubbleRef.current?.getBoundingClientRect();
+      onSetActiveReactionId(msg.id, rect ? { top: rect.top, isMe: msg.authorId === userId } : undefined);
     }, 400);
-  }, [msg.id, onSetActiveReactionId, onVibrate]);
+  }, [msg.id, msg.authorId, userId, onSetActiveReactionId, onVibrate]);
 
   const handlePressEnd = useCallback(() => {
     if (pressTimer.current) clearTimeout(pressTimer.current);
@@ -58,6 +64,7 @@ export const MessageBubble = React.memo(({
 
   return (
     <motion.div 
+      ref={bubbleRef}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.7}
@@ -77,15 +84,16 @@ export const MessageBubble = React.memo(({
         isOnlyEmoji ? "px-3 pb-1.5 pt-2 text-4xl" : "px-3.5 py-2.5 text-[15px]",
         msg.reactions && msg.reactions.length > 0 && "mb-5",
         isMe 
-          ? "bg-[var(--color-accent)] text-white rounded-[20px] rounded-br-md shadow-[var(--shadow-md)]" 
-          : "bg-[var(--color-surface)] text-[var(--color-text)] rounded-[20px] rounded-tl-md shadow-[var(--shadow-sm)] border border-[var(--color-border)]",
+          ? cn("bg-[var(--color-accent)] text-white shadow-[var(--shadow-md)] rounded-[20px]", isGroupEnd ? "rounded-br-md" : "") 
+          : cn("bg-[var(--color-surface)] text-[var(--color-text)] shadow-[var(--shadow-sm)] border border-[var(--color-border)] rounded-[20px]", isGroupStart ? "rounded-tl-md" : ""),
         msg.pending && "opacity-60",
         activeReactionId === msg.id && "ring-2 ring-[var(--color-accent)]/40"
       )}
       onContextMenu={(e) => {
         e.preventDefault();
         onVibrate([20]);
-        onSetActiveReactionId(msg.id);
+        const rect = bubbleRef.current?.getBoundingClientRect();
+        onSetActiveReactionId(msg.id, rect ? { top: rect.top, isMe: msg.authorId === userId } : undefined);
       }}
       onClick={handleTap}
       onTouchStart={handlePressStart}
@@ -100,7 +108,7 @@ export const MessageBubble = React.memo(({
           "flex flex-col text-[13px] border-l-2 px-2.5 py-1.5 mb-2 rounded-r-md cursor-pointer overflow-hidden",
           isMe ? "bg-white/15 border-white/50 text-white/90" : "bg-[var(--color-accent-muted)] border-[var(--color-accent)] text-[var(--color-text-secondary)]"
         )}>
-          <span className={cn("font-semibold text-[10px] uppercase mb-0.5", isMe ? "text-white/80" : "text-[var(--color-accent)]")}>
+          <span className={cn("font-semibold text-xs uppercase mb-0.5", isMe ? "text-white/80" : "text-[var(--color-accent)]")}>
             {msg.replyTo.authorId}
           </span>
           <span className="truncate">{msg.replyTo.content || "Media"}</span>
@@ -118,12 +126,12 @@ export const MessageBubble = React.memo(({
       ))}
       <div className="flex flex-row items-end justify-between gap-3 mt-0.5 min-w-0">
         <p className="break-words whitespace-pre-wrap min-w-0">{msg.content}</p>
-        <div className={cn("flex items-center text-[10px] space-x-1 font-medium flex-shrink-0 pt-1", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
+        <div className={cn("flex items-center text-xs space-x-1 font-medium flex-shrink-0 pt-1", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
           <span>
             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
           {isMe && (
-            <span className="flex items-center ml-0.5 text-[11.5px]">
+            <span className="flex items-center ml-0.5 text-xs">
               {msg.failed ? (
                 <button
                   onClick={(e) => { e.stopPropagation(); onRetryMessage(msg); }}
@@ -131,7 +139,7 @@ export const MessageBubble = React.memo(({
                   className="flex items-center space-x-0.5 text-red-300 hover:text-white transition-colors"
                 >
                   <RotateCcw size={10} />
-                  <span className="text-[9px]">Failed</span>
+                  <span className="text-xs">Failed</span>
                 </button>
               ) : msg.pending ? (
                 <span className="opacity-70">◷</span>
@@ -162,7 +170,7 @@ export const MessageBubble = React.memo(({
                 onToggleReaction(msg.id, emoji);
               }}
               className={cn(
-                "flex items-center space-x-1 px-1.5 py-0.5 rounded-full text-[10px] shadow-sm border transition-transform active:scale-90",
+                "flex items-center space-x-1 px-1.5 py-0.5 rounded-full text-xs shadow-sm border transition-transform active:scale-90",
                 data.me 
                   ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]" 
                   : "bg-[var(--color-surface)] text-[var(--color-text)] border-[var(--color-border)]"
