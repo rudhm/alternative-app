@@ -479,9 +479,10 @@ export function ChatRoom() {
             const msg = messages[vItem.index];
             const isMe = msg.authorId === userId;
             const isOnlyEmoji = msg.content && /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s]+$/u.test(msg.content);
+            const isNew = Date.now() - new Date(msg.createdAt).getTime() < 5000;
 
             return (
-              <div
+              <motion.div
                 key={vItem.key}
                 data-index={vItem.index}
                 ref={virtualizer.measureElement}
@@ -489,8 +490,10 @@ export function ChatRoom() {
                   "absolute top-0 left-0 w-full flex py-1",
                   isMe ? "justify-end" : "justify-start"
                 )}
+                initial={false}
+                animate={{ y: vItem.start }}
+                transition={{ type: "spring", stiffness: 350, damping: 30 }}
                 style={{
-                  transform: `translateY(${vItem.start}px)`,
                   zIndex: messages.length - vItem.index,
                 }}
               >
@@ -504,6 +507,10 @@ export function ChatRoom() {
                       vibrate(20);
                     }
                   }}
+                  initial={isNew ? { opacity: 0, scale: 0.5, y: 20 } : false}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  style={{ originX: isMe ? 1 : 0, originY: 1 }}
                   className={cn(
                     "max-w-[82%] sm:max-w-[72%] leading-relaxed relative cursor-pointer",
                     isOnlyEmoji ? "px-3 pb-1.5 pt-2 text-4xl" : "px-3.5 py-2.5 text-[15px]",
@@ -568,9 +575,9 @@ export function ChatRoom() {
                           ) : msg.pending ? (
                             <span className="opacity-70">◷</span>
                           ) : msg.readReceipt ? (
-                            <span className="text-white font-bold leading-none">✓✓</span>
+                            <motion.span key="read" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="text-white font-bold leading-none">✓✓</motion.span>
                           ) : (
-                            <span className="opacity-70 leading-none">✓</span>
+                            <motion.span key="sent" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="opacity-70 leading-none">✓</motion.span>
                           )}
                         </span>
                       )}
@@ -604,7 +611,7 @@ export function ChatRoom() {
                     </div>
                   )}
                 </motion.div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
