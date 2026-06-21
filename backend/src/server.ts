@@ -26,11 +26,6 @@ app.use('/uploads', authMiddleware, express.static(uploadDir));
 async function initDb() {
   await prisma.user.upsert({ where: { id: 'Hasi' }, update: {}, create: { id: 'Hasi' } });
   await prisma.user.upsert({ where: { id: 'Rudh' }, update: {}, create: { id: 'Rudh' } });
-
-  const existingKey = await prisma.setting.findUnique({ where: { key: 'ROOM_KEY' } });
-  if (!existingKey) {
-    await prisma.setting.create({ data: { key: 'ROOM_KEY', value: 'ah' } });
-  }
 }
 initDb().catch(console.error);
 

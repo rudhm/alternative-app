@@ -67,9 +67,3 @@ model ReadReceipt {
   user      User     @relation(fields: [userId], references: [id])
   readAt    DateTime @default(now())
 }
-
-model Setting {
-  id    String @id @default(cuid())
-  key   String @unique
-  value String
-}

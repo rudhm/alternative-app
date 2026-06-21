@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx tsc",
-    "start": "npx prisma db push --skip-generate --accept-data-loss && node dist/server.js",
+    "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts"
   },
   "keywords": [],
