@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useWs } from "@/components/WsProvider";
 import { NetworkBanner } from "@/components/NetworkBanner";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -66,39 +66,43 @@ export function ChatRoom() {
   const { typingUser, handleTyping } = useTyping(onMessage, sendMessage);
   const { otherStatus, displayStatus } = usePresence(onMessage, userId, status);
 
-  const items: any[] = [];
-  let lastDateStr = "";
+  const items = useMemo(() => {
+    const newItems: any[] = [];
+    let lastDateStr = "";
 
-  messages.forEach((msg, i) => {
-    const d = new Date(msg.createdAt);
-    const dateStr = d.toLocaleDateString();
+    messages.forEach((msg, i) => {
+      const d = new Date(msg.createdAt);
+      const dateStr = d.toLocaleDateString();
 
-    if (dateStr !== lastDateStr) {
-      const now = new Date();
-      const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      let label = dateStr;
-      if (isToday) {
-        label = "Today";
-      } else {
-        const yesterday = new Date(now);
-        yesterday.setDate(now.getDate() - 1);
-        if (d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear()) {
-          label = "Yesterday";
+      if (dateStr !== lastDateStr) {
+        const now = new Date();
+        const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        let label = dateStr;
+        if (isToday) {
+          label = "Today";
+        } else {
+          const yesterday = new Date(now);
+          yesterday.setDate(now.getDate() - 1);
+          if (d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear()) {
+            label = "Yesterday";
+          }
         }
+
+        newItems.push({ type: "date_separator", id: `date-${dateStr}`, label });
+        lastDateStr = dateStr;
       }
 
-      items.push({ type: "date_separator", id: `date-${dateStr}`, label });
-      lastDateStr = dateStr;
-    }
+      const prevMsg = i > 0 ? messages[i-1] : null;
+      const nextMsg = i < messages.length - 1 ? messages[i+1] : null;
 
-    const prevMsg = i > 0 ? messages[i-1] : null;
-    const nextMsg = i < messages.length - 1 ? messages[i+1] : null;
+      const isGroupStart = !prevMsg || prevMsg.authorId !== msg.authorId || new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime() > 5 * 60 * 1000 || new Date(prevMsg.createdAt).toLocaleDateString() !== dateStr;
+      const isGroupEnd = !nextMsg || nextMsg.authorId !== msg.authorId || new Date(nextMsg.createdAt).getTime() - new Date(msg.createdAt).getTime() > 5 * 60 * 1000 || new Date(nextMsg.createdAt).toLocaleDateString() !== dateStr;
 
-    const isGroupStart = !prevMsg || prevMsg.authorId !== msg.authorId || new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime() > 5 * 60 * 1000 || new Date(prevMsg.createdAt).toLocaleDateString() !== dateStr;
-    const isGroupEnd = !nextMsg || nextMsg.authorId !== msg.authorId || new Date(nextMsg.createdAt).getTime() - new Date(msg.createdAt).getTime() > 5 * 60 * 1000 || new Date(nextMsg.createdAt).toLocaleDateString() !== dateStr;
+      newItems.push({ ...msg, isGroupStart, isGroupEnd });
+    });
 
-    items.push({ ...msg, isGroupStart, isGroupEnd });
-  });
+    return newItems;
+  }, [messages]);
 
   const virtualizer = useVirtualizer({
     count: items.length,
@@ -107,15 +111,18 @@ export function ChatRoom() {
     overscan: 10,
   });
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     if (target.scrollTop < 100) {
       loadMore();
     }
     const atBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
     isAtBottom.current = atBottom;
-    setShowScrollBottom(!atBottom);
-  };
+    setShowScrollBottom((prev) => {
+      const shouldShow = !atBottom;
+      return prev !== shouldShow ? shouldShow : prev;
+    });
+  }, [loadMore]);
 
   const scrollToBottom = useCallback(() => {
     if (items.length > 0) {
