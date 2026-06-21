@@ -1,0 +1,69 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String    @id
+  // Identities: "Hasi" or "Rudh"
+  messages      Message[]
+  reactions     Reaction[]
+  readReceipts  ReadReceipt[]
+  lastSeen      DateTime  @default(now())
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String?  // Optional if it's just media
+  createdAt DateTime @default(now())
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  media       Media[]
+  reactions   Reaction[]
+  readReceipt ReadReceipt?
+  replyToId   String?
+  replyTo     Message?   @relation("ReplyTo", fields: [replyToId], references: [id])
+  replies     Message[]  @relation("ReplyTo")
+
+  // Immutability: No updatedAt field. Messages cannot be updated or deleted.
+
+  @@index([createdAt])  // Cursor-pagination ORDER BY
+  @@index([authorId])   // Per-user message lookups
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  url       String
+  type      String   // image, video, audio, pdf, archive
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([messageId]) // Fast JOIN on message include
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, messageId, emoji]) // A user can have one of a specific reaction type per message
+  @@index([messageId])                 // Fast JOIN on message include
+}
+
+model ReadReceipt {
+  id        String   @id @default(cuid())
+  messageId String   @unique
+  message   Message  @relation(fields: [messageId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  readAt    DateTime @default(now())
+}
