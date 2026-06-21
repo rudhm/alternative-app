@@ -280,6 +280,7 @@ export function ChatRoom() {
     setText("");
     setReplyingTo(null);
     vibrate(10);
+    inputRef.current?.focus();
 
     // Optimistic rollback: if server doesn't ACK within 5s, mark as failed
     setTimeout(() => {
@@ -316,6 +317,7 @@ export function ChatRoom() {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -662,9 +664,10 @@ export function ChatRoom() {
           
           <input
             type="text"
-            name="t_field"
-            id="t_field"
-            autoComplete="off"
+            ref={inputRef}
+            name="chatMessage"
+            id="chat-input"
+            autoComplete="nope"
             autoCorrect="off"
             autoCapitalize="none"
             spellCheck={false}
@@ -697,6 +700,7 @@ export function ChatRoom() {
 
           <button 
             onClick={handleSend}
+            onMouseDown={(e) => e.preventDefault()}
             aria-label="Send message"
             className={cn(
               "w-9 h-9 ml-1 rounded-full flex items-center justify-center transition-all active:scale-[0.94] flex-shrink-0",
