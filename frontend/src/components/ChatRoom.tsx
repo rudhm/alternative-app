@@ -478,6 +478,7 @@ export function ChatRoom() {
           {virtualizer.getVirtualItems().map((vItem) => {
             const msg = messages[vItem.index];
             const isMe = msg.authorId === userId;
+            const isOnlyEmoji = msg.content && /^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s]+$/u.test(msg.content);
 
             return (
               <div
@@ -490,6 +491,7 @@ export function ChatRoom() {
                 )}
                 style={{
                   transform: `translateY(${vItem.start}px)`,
+                  zIndex: messages.length - vItem.index,
                 }}
               >
                 <motion.div 
@@ -503,7 +505,9 @@ export function ChatRoom() {
                     }
                   }}
                   className={cn(
-                    "max-w-[82%] sm:max-w-[72%] px-3.5 py-2.5 text-[15px] leading-relaxed relative cursor-pointer",
+                    "max-w-[82%] sm:max-w-[72%] leading-relaxed relative cursor-pointer",
+                    isOnlyEmoji ? "px-3 pb-1.5 pt-2 text-4xl" : "px-3.5 py-2.5 text-[15px]",
+                    msg.reactions && msg.reactions.length > 0 && "mb-5",
                     isMe 
                       ? "bg-[var(--color-accent)] text-white rounded-[20px] rounded-br-md shadow-[var(--shadow-md)]" 
                       : "bg-[var(--color-surface)] text-[var(--color-text)] rounded-[20px] rounded-tl-md shadow-[var(--shadow-sm)] border border-[var(--color-border)]",
@@ -545,7 +549,7 @@ export function ChatRoom() {
                     </div>
                   ))}
                   <p className="break-words whitespace-pre-wrap">{msg.content}</p>
-                  <div className={cn("text-[10px] mt-1.5 text-right flex justify-end items-center space-x-1 font-medium", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
+                  <div className={cn("text-[10px] text-right flex justify-end items-center space-x-1 font-medium", isOnlyEmoji ? "mt-0.5" : "mt-1.5", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
                     <span>
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -572,7 +576,7 @@ export function ChatRoom() {
                   </div>
 
                   {msg.reactions && msg.reactions.length > 0 && (
-                    <div className="absolute -bottom-3 flex flex-wrap gap-1 z-10" style={{ [isMe ? 'right' : 'left']: '9px' }}>
+                    <div className="absolute -bottom-2.5 flex flex-wrap gap-1 z-30" style={{ [isMe ? 'right' : 'left']: '15px' }}>
                       {Object.entries(
                         msg.reactions.reduce((acc: any, r: any) => {
                           if (!acc[r.emoji]) acc[r.emoji] = { count: 0, me: false };
