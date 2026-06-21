@@ -8,7 +8,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   interactiveWidget: "resizes-content", // Key for PWA keyboard pushing layout
-  themeColor: "#faf9f8",
+  themeColor: "#F5E9E2",
 };
 
 export const metadata: Metadata = {

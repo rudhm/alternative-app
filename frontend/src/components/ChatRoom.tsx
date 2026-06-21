@@ -629,6 +629,12 @@ export function ChatRoom() {
           
           <input
             type="text"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            data-1p-ignore="true"
+            data-lpignore="true"
             className="flex-1 bg-transparent border-none outline-none focus:ring-0 focus-visible:outline-none px-2 text-[var(--color-text)] text-[15px] placeholder:text-[var(--color-text-muted)] py-2 min-w-0"
             style={{ boxShadow: 'none' }}
             placeholder="Message..."

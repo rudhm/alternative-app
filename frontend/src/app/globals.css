@@ -14,7 +14,7 @@
   --color-danger-muted: rgba(239, 68, 68, 0.15);
 
   /* ─── Light-mode surfaces ─── */
-  --color-bg: #faf9f8;
+  --color-bg: #F5E9E2;
   --color-surface: #ffffff;
   --color-surface-raised: rgba(255, 255, 255, 0.85);
   --color-surface-overlay: rgba(255, 255, 255, 0.90);
@@ -44,7 +44,7 @@
   --radius-full: 9999px;
 
   /* ─── keep tailwind defaults working ─── */
-  --color-background: #faf9f8;
+  --color-background: #F5E9E2;
   --color-foreground: #1a1a1a;
   --color-primary: #d9118f;
   --color-primary-foreground: #ffffff;
@@ -59,7 +59,7 @@
     background-color: var(--color-bg);
     color: var(--color-text);
     overscroll-behavior-y: none;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'SF Pro', 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 
   /* Disable pull-to-refresh on mobile */
@@ -85,10 +85,10 @@
 
 /* ─── Dark mode overrides ─── */
 .dark {
-  --color-bg: #0a0a0c;
-  --color-surface: #141416;
-  --color-surface-raised: rgba(28, 28, 30, 0.85);
-  --color-surface-overlay: rgba(28, 28, 30, 0.92);
+  --color-bg: #160029;
+  --color-surface: #240a3d;
+  --color-surface-raised: rgba(36, 10, 61, 0.85);
+  --color-surface-overlay: rgba(36, 10, 61, 0.92);
 
   --color-text: #f0f0f0;
   --color-text-secondary: #9ca3af;
@@ -101,6 +101,6 @@
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
 
-  --color-background: #0a0a0c;
+  --color-background: #160029;
   --color-foreground: #f0f0f0;
 }

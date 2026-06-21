@@ -83,6 +83,12 @@ export default function Home() {
           <input
             type="password"
             placeholder="Shh..."
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            data-1p-ignore="true"
+            data-lpignore="true"
             className="w-full bg-[var(--color-bg)] dark:bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg px-4 py-3 text-center text-lg text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-0"
             value={roomKey}
             onChange={(e) => setRoomKey(e.target.value)}
