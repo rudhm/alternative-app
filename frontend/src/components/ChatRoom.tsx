@@ -548,12 +548,9 @@ export function ChatRoom() {
                       )}
                     </div>
                   ))}
-                  <div className="relative mt-0.5 w-full">
-                    <p className="break-words whitespace-pre-wrap min-w-0">
-                      {msg.content}
-                      <span className="inline-block w-[75px]" aria-hidden="true" />
-                    </p>
-                    <div className={cn("absolute bottom-0 right-0 flex items-center text-[10px] space-x-1 font-medium", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
+                  <div className="flex flex-row items-end justify-between gap-3 mt-0.5 min-w-0">
+                    <p className="break-words whitespace-pre-wrap min-w-0">{msg.content}</p>
+                    <div className={cn("flex items-center text-[10px] space-x-1 font-medium flex-shrink-0 pt-1", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
                       <span>
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
