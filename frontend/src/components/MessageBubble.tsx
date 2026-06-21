@@ -170,14 +170,13 @@ export const MessageBubble = React.memo(({
                 onToggleReaction(msg.id, emoji);
               }}
               className={cn(
-                "flex items-center space-x-1 px-1.5 py-0.5 rounded-full text-xs shadow-sm border transition-transform active:scale-90",
+                "flex items-center justify-center w-6 h-6 rounded-full text-[13px] shadow-sm border transition-transform active:scale-90",
                 data.me 
                   ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]" 
                   : "bg-[var(--color-surface)] text-[var(--color-text)] border-[var(--color-border)]"
               )}
             >
-              <span>{emoji}</span>
-              <span className={cn("font-medium", data.me ? "text-white" : "text-[var(--color-text-muted)]")}>{data.count}</span>
+              <span className="leading-none transform translate-y-[0.5px]">{emoji}</span>
             </button>
           ))}
         </div>
