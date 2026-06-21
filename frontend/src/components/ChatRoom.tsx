@@ -548,31 +548,33 @@ export function ChatRoom() {
                       )}
                     </div>
                   ))}
-                  <p className="break-words whitespace-pre-wrap">{msg.content}</p>
-                  <div className={cn("text-[10px] text-right flex justify-end items-center space-x-1 font-medium", isOnlyEmoji ? "mt-0.5" : "mt-1.5", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
-                    <span>
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    {isMe && (
-                      <span className="ml-1 text-[11.5px]">
-                        {msg.failed ? (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); retryMessage(msg); }}
-                            aria-label="Retry sending message"
-                            className="flex items-center space-x-0.5 text-red-300 hover:text-white transition-colors"
-                          >
-                            <RotateCcw size={10} />
-                            <span className="text-[9px]">Failed</span>
-                          </button>
-                        ) : msg.pending ? (
-                          <span className="opacity-70">◷</span>
-                        ) : msg.readReceipt ? (
-                          <span className="text-white font-bold">✓✓</span>
-                        ) : (
-                          <span className="opacity-70">✓</span>
-                        )}
+                  <div className="flex flex-row items-end justify-between w-full gap-2">
+                    <p className="break-words whitespace-pre-wrap min-w-0">{msg.content}</p>
+                    <div className={cn("text-[10px] flex-shrink-0 flex items-center space-x-1 font-medium", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
+                      <span>
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
-                    )}
+                      {isMe && (
+                        <span className="flex items-center ml-1 text-[11.5px]">
+                          {msg.failed ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); retryMessage(msg); }}
+                              aria-label="Retry sending message"
+                              className="flex items-center space-x-0.5 text-red-300 hover:text-white transition-colors"
+                            >
+                              <RotateCcw size={10} />
+                              <span className="text-[9px]">Failed</span>
+                            </button>
+                          ) : msg.pending ? (
+                            <span className="opacity-70">◷</span>
+                          ) : msg.readReceipt ? (
+                            <span className="text-white font-bold leading-none">✓✓</span>
+                          ) : (
+                            <span className="opacity-70 leading-none">✓</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {msg.reactions && msg.reactions.length > 0 && (
