@@ -8,11 +8,10 @@ datasource db {
 }
 
 model User {
-  id              String    @id
+  id        String    @id
   // Identities: "Hasi" or "Rudh"
-  partnerNickname String?
-  messages        Message[]
-  reactions       Reaction[]
+  messages      Message[]
+  reactions     Reaction[]
   readReceipts  ReadReceipt[]
   lastSeen      DateTime  @default(now())
 }
