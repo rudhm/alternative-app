@@ -12,7 +12,8 @@ const storage = multer.memoryStorage();
 export const uploadMiddleware = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
 
 export const processMedia = async (file: Express.Multer.File): Promise<{ url: string, type: string }> => {
-  const { fromBuffer } = await import('file-type');
+  const fileTypeModule = await import('file-type');
+  const fromBuffer = fileTypeModule.default ? fileTypeModule.default.fromBuffer : (fileTypeModule as any).fromBuffer;
   const typeInfo = await fromBuffer(file.buffer);
   if (!typeInfo) throw new Error('Unsupported file type');
   
