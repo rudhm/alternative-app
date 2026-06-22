@@ -1,5 +1,4 @@
 import multer from 'multer';
-import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 // Dynamic import used for file-type
@@ -31,18 +30,11 @@ export const processMedia = async (file: Express.Multer.File): Promise<{ url: st
   else if (ext === '.pdf') type = 'pdf';
   else throw new Error('File type not allowed');
 
-  const outFilename = (type === 'image' && ext !== '.gif') ? `${filename}.webp` : `${filename}${ext}`;
+  const outFilename = `${filename}${ext}`;
   const outPath = path.join(uploadDir, outFilename);
 
   try {
-    if (type === 'image' && ext !== '.gif') {
-      await sharp(file.buffer)
-        .resize({ width: 1920, withoutEnlargement: true })
-        .webp({ quality: 80 })
-        .toFile(outPath);
-    } else {
-      fs.writeFileSync(outPath, file.buffer);
-    }
+    fs.writeFileSync(outPath, file.buffer);
     return { url: `/uploads/${outFilename}`, type };
   } catch (err) {
     if (fs.existsSync(outPath)) {
