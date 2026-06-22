@@ -257,6 +257,7 @@ export function useMessages({
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = '';
 
     const msgId = crypto.randomUUID();
     const placeholderUrl = URL.createObjectURL(file);
@@ -302,7 +303,11 @@ export function useMessages({
 
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText));
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (err) {
+              reject(new Error("Invalid JSON response"));
+            }
           } else {
             reject(new Error("Upload failed"));
           }
@@ -314,6 +319,7 @@ export function useMessages({
 
       const data: any = await uploadPromise;
       
+      isAtBottom.current = true;
       sendMessage({
         type: "chat",
         payload: {
@@ -323,9 +329,16 @@ export function useMessages({
         }
       });
       vibrate(10);
-      URL.revokeObjectURL(placeholderUrl);
+      setTimeout(() => URL.revokeObjectURL(placeholderUrl), 10000);
     } catch (err) {
       console.error("Upload failed", err);
+      setMessages(prev => {
+        const idx = prev.findIndex(m => m.id === msgId);
+        if (idx === -1) return prev;
+        const next = [...prev];
+        next[idx] = { ...next[idx], pending: false, failed: true, uploadProgress: undefined };
+        return next;
+      });
       URL.revokeObjectURL(placeholderUrl);
     }
   }, [sendMessage, userId, token]);
