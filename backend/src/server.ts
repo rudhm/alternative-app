@@ -77,7 +77,20 @@ app.post('/api/upload', authMiddleware, uploadLimiter, uploadMiddleware.single('
 // Cursor-based pagination endpoint for fetching history
 app.get('/api/messages', authMiddleware, async (req, res) => {
   const cursor = req.query.cursor as string | undefined;
+  const after = req.query.after as string | undefined;
   const limit = 50;
+
+  if (after) {
+    const refMsg = await prisma.message.findUnique({ where: { id: after } });
+    if (!refMsg) return res.json({ messages: [] });
+    
+    const messages = await prisma.message.findMany({
+      where: { createdAt: { gt: refMsg.createdAt } },
+      orderBy: { createdAt: 'desc' },
+      include: { media: true, reactions: true, readReceipt: true, replyTo: true },
+    });
+    return res.json({ messages: messages.reverse() });
+  }
 
   const messages = await prisma.message.findMany({
     take: limit + 1,
@@ -149,7 +162,7 @@ const wsMessageSchema = z.object({
 
 const chatPayloadSchema = z.object({
   id: z.string(),
-  content: z.string().optional().nullable(),
+  content: z.string().max(10_000).optional().nullable(),
   replyToId: z.string().optional().nullable(),
   media: z.array(z.object({
     url: z.string(),
@@ -259,10 +272,16 @@ wss.on('connection', (ws: any) => {
         }).then(() => {
           const otherUserId = userId === 'Hasi' ? 'Rudh' : 'Hasi';
           const isOtherOnline = clients.has(otherUserId);
-          if (!isOtherOnline && userId === 'Hasi') {
+          if (!isOtherOnline) {
             sendTelegramNotification(otherUserId, userId, content || null).catch(console.error);
           }
-        }).catch(err => console.error('DB write failed for chat', err));
+        }).catch(err => {
+          console.error('DB write failed for chat', err);
+          const senderWs = clients.get(userId);
+          if (senderWs?.readyState === WebSocket.OPEN) {
+            senderWs.send(JSON.stringify({ type: 'error', payload: { id, reason: 'db_write_failed' } }));
+          }
+        });
       } else if (data.type === 'typing') {
         broadcast({ type: 'typing', userId }, [userId]);
       } else if (data.type === 'reaction') {

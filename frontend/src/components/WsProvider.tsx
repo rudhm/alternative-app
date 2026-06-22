@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 
-type ConnectionStatus = "connecting" | "connected" | "syncing" | "disconnected";
+type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
 interface WsContextType {
   status: ConnectionStatus;
@@ -22,6 +22,8 @@ export function WsProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectDelay = useRef(1000);
+  const queueRef = useRef<any[]>([]);
   const handlersRef = useRef<Set<(msg: any) => void>>(new Set());
 
   const onMessage = useCallback((handler: (msg: any) => void) => {
@@ -32,7 +34,7 @@ export function WsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const connect = useCallback(function doConnect(uid: string, authToken?: string) {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
     setUserId(uid);
     setToken(authToken || null);
     setStatus("connecting");
@@ -48,7 +50,10 @@ export function WsProvider({ children }: { children: React.ReactNode }) {
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
+      reconnectDelay.current = 1000;
       setStatus("connected");
+      queueRef.current.forEach(msg => ws.send(JSON.stringify(msg)));
+      queueRef.current = [];
     };
 
     ws.onmessage = (event) => {
@@ -65,7 +70,8 @@ export function WsProvider({ children }: { children: React.ReactNode }) {
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = setTimeout(() => {
         if (uid) doConnect(uid, authToken);
-      }, 3000);
+      }, reconnectDelay.current);
+      reconnectDelay.current = Math.min(reconnectDelay.current * 2, 30_000);
     };
 
     ws.onerror = () => {
@@ -78,6 +84,8 @@ export function WsProvider({ children }: { children: React.ReactNode }) {
   const sendMessage = useCallback((data: any) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(data));
+    } else if (data.type === 'chat') {
+      queueRef.current.push(data);
     }
   }, []);
 

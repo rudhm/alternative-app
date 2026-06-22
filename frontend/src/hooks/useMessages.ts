@@ -50,22 +50,29 @@ export function useMessages({
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://rudhasi.mooo.com";
-        fetch(`${apiUrl}/api/messages`, { 
-          headers: { Authorization: `Bearer ${token}` },
-          credentials: "include" 
-        })
-          .then(r => r.json())
-          .then(d => {
-            if (d.messages) {
-              setMessages(prev => {
-                const existingIds = new Set(prev.map(m => m.id));
-                const newMsgs = d.messages.filter((m: any) => !existingIds.has(m.id));
-                if (newMsgs.length === 0) return prev;
-                return [...prev, ...newMsgs];
-              });
-            }
+        setMessages(prev => {
+          const latestMsg = prev.length > 0 ? prev[prev.length - 1] : null;
+          const afterParam = latestMsg ? `?after=${latestMsg.id}` : '';
+          
+          fetch(`${apiUrl}/api/messages${afterParam}`, { 
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: "include" 
           })
-          .catch(() => {});
+            .then(r => r.json())
+            .then(d => {
+              if (d.messages) {
+                setMessages(currentMsgs => {
+                  const existingIds = new Set(currentMsgs.map((m: any) => m.id));
+                  const newMsgs = d.messages.filter((m: any) => !existingIds.has(m.id));
+                  if (newMsgs.length === 0) return currentMsgs;
+                  return [...currentMsgs, ...newMsgs];
+                });
+              }
+            })
+            .catch(() => {});
+            
+          return prev;
+        });
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
@@ -151,6 +158,17 @@ export function useMessages({
            next[idx] = { ...next[idx], readReceipt: rr };
            return next;
          });
+      } else if (lastMessage?.type === 'error') {
+         const errPayload = lastMessage.payload;
+         if (errPayload?.id) {
+           setMessages(prev => {
+             const idx = prev.findIndex(m => m.id === errPayload.id);
+             if (idx === -1) return prev;
+             const next = [...prev];
+             next[idx] = { ...next[idx], pending: false, failed: true };
+             return next;
+           });
+         }
       }
     });
   }, [onMessage, userId]);
@@ -182,7 +200,7 @@ export function useMessages({
   const handleSend = useCallback((text: string) => {
     if (!text.trim()) return;
     
-    const msgId = `loc-${Date.now()}`;
+    const msgId = crypto.randomUUID();
     const payload = {
       id: msgId,
       content: text,
@@ -240,7 +258,7 @@ export function useMessages({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const msgId = `loc-${Date.now()}`;
+    const msgId = crypto.randomUUID();
     const placeholderUrl = URL.createObjectURL(file);
     
     const payload = {
@@ -275,6 +293,7 @@ export function useMessages({
           next[idx] = { ...next[idx], pending: false, failed: true };
           return next;
         });
+        URL.revokeObjectURL(placeholderUrl);
         return;
       }
       const data = await res.json();
@@ -288,8 +307,10 @@ export function useMessages({
         }
       });
       vibrate(10);
+      URL.revokeObjectURL(placeholderUrl);
     } catch (err) {
       console.error("Upload failed", err);
+      URL.revokeObjectURL(placeholderUrl);
     }
   }, [sendMessage, userId, token]);
 
