@@ -41,10 +41,13 @@ export const MessageInputBar = React.memo(({
   const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
     
-    // Auto-resize
+    // Auto-resize without blocking main thread
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+      const el = textareaRef.current;
+      requestAnimationFrame(() => {
+        el.style.height = 'auto';
+        el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+      });
     }
 
     if (!myTypingTimeoutRef.current) {
