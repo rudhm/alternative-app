@@ -61,32 +61,66 @@ export const MessageBubble = React.memo(({
       lastTapRef.current = now;
     }
   }, [msg.id, msg.reactions, userId, onToggleReaction]);
+  const startXRef = useRef<number | null>(null);
+  const startYRef = useRef<number | null>(null);
+  const isDraggingX = useRef<boolean>(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    handlePressStart(e);
+    startXRef.current = e.touches[0].clientX;
+    startYRef.current = e.touches[0].clientY;
+    isDraggingX.current = false;
+    if (bubbleRef.current) {
+      bubbleRef.current.style.transition = 'none';
+    }
+  }, [handlePressStart]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    handlePressEnd(); 
+    if (startXRef.current === null || startYRef.current === null || !bubbleRef.current) return;
+    const diffX = e.touches[0].clientX - startXRef.current;
+    const diffY = e.touches[0].clientY - startYRef.current;
+    
+    if (!isDraggingX.current) {
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 5) {
+        isDraggingX.current = true;
+      } else if (Math.abs(diffY) > 5) {
+        startXRef.current = null;
+        return;
+      }
+    }
+
+    if (isDraggingX.current) {
+      const boundedDiff = Math.max(-60, Math.min(60, diffX));
+      bubbleRef.current.style.transform = `translateX(${boundedDiff}px)`;
+    }
+  }, [handlePressEnd]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    handlePressEnd();
+    if (startXRef.current === null || !bubbleRef.current) return;
+    const diff = e.changedTouches[0].clientX - startXRef.current;
+    if (isDraggingX.current && Math.abs(diff) > 40) {
+      onSetReplyingTo(msg);
+      onVibrate(20);
+    }
+    startXRef.current = null;
+    isDraggingX.current = false;
+    bubbleRef.current.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    bubbleRef.current.style.transform = 'translateX(0px)';
+  }, [handlePressEnd, msg, onSetReplyingTo, onVibrate]);
 
   return (
-    <motion.div 
+    <div 
       ref={bubbleRef}
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.7}
-      dragTransition={{ bounceStiffness: 600, bounceDamping: 25 }}
-      onDragEnd={(e, info) => {
-        if (Math.abs(info.offset.x) > 50 || Math.abs(info.velocity.x) > 500) {
-          onSetReplyingTo(msg);
-          onVibrate(20);
-        }
-      }}
-      initial={isNew ? { opacity: 0, scale: 0.85, y: 20 } : false}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
-      transition={{ type: "spring", stiffness: 450, damping: 28 }}
-      style={{ originX: isMe ? 1 : 0, originY: 1 }}
       className={cn(
-        "max-w-[82%] sm:max-w-[72%] leading-relaxed relative cursor-pointer",
+        "max-w-[82%] sm:max-w-[72%] leading-relaxed relative cursor-pointer will-change-transform",
+        isNew && "animate-enter",
         isOnlyEmoji ? "px-3 pb-1.5 pt-2 text-4xl" : "px-3.5 py-2.5 text-[15px]",
         msg.reactions && msg.reactions.length > 0 && "mb-5",
         isMe 
-          ? cn("bg-gradient-to-br from-[var(--color-accent-light)] to-[var(--color-accent)] text-white shadow-[var(--shadow-md)] rounded-[22px]", isGroupEnd && "rounded-br-[4px]", isGroupStart && "rounded-tr-[12px]") 
-          : cn("bg-[var(--color-surface-raised)] text-[var(--color-text)] shadow-[var(--shadow-md)] border border-[var(--color-border-strong)] rounded-[22px]", isGroupEnd && "rounded-bl-[4px]", isGroupStart && "rounded-tl-[12px]"),
+          ? cn("bg-gradient-to-br from-[var(--color-accent-light)] to-[var(--color-accent)] text-white rounded-[22px] shadow-sm", isGroupEnd && "rounded-br-[4px]", isGroupStart && "rounded-tr-[12px]") 
+          : cn("bg-[var(--color-surface-raised)] text-[var(--color-text)] border border-[var(--color-border-strong)] rounded-[22px] shadow-sm", isGroupEnd && "rounded-bl-[4px]", isGroupStart && "rounded-tl-[12px]"),
         msg.pending && "opacity-60",
         activeReactionId === msg.id && "ring-2 ring-[var(--color-accent)]/40"
       )}
@@ -96,9 +130,9 @@ export const MessageBubble = React.memo(({
         onSetActiveReactionId(msg.id, { top: e.clientY, isMe: msg.authorId === userId });
       }}
       onClick={handleTap}
-      onTouchStart={handlePressStart}
-      onTouchEnd={handlePressEnd}
-      onTouchMove={handlePressEnd}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
       onMouseDown={handlePressStart}
       onMouseUp={handlePressEnd}
       onMouseLeave={handlePressEnd}
@@ -180,7 +214,7 @@ export const MessageBubble = React.memo(({
           ))}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }, (prev, next) => {
   return (
