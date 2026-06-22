@@ -122,6 +122,9 @@ export function ChatRoom() {
   });
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (activeReactionId) {
+      setActiveReactionId(null);
+    }
     const target = e.currentTarget;
     if (target.scrollTop < 100) {
       loadMore();
@@ -132,7 +135,7 @@ export function ChatRoom() {
       const shouldShow = !atBottom;
       return prev !== shouldShow ? shouldShow : prev;
     });
-  }, [loadMore]);
+  }, [loadMore, activeReactionId, setActiveReactionId]);
 
   const scrollToBottom = useCallback(() => {
     if (items.length > 0) {
@@ -179,38 +182,41 @@ export function ChatRoom() {
       </div>
       
       {activeReactionId && (
-        <div 
-          className="fixed inset-0 z-[300000] bg-black/20 dark:bg-black/40"
-          onClick={() => setActiveReactionId(null)}
-        >
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: 'absolute',
-              top: activeReactionPos ? Math.max(70, activeReactionPos.top - 60) : '50%',
-              left: activeReactionPos ? (activeReactionPos.isMe ? 'auto' : '16px') : '50%',
-              right: activeReactionPos ? (activeReactionPos.isMe ? '16px' : 'auto') : 'auto',
-              transform: activeReactionPos ? 'none' : 'translate(-50%, -50%)'
-            }}
-            className="bg-[var(--color-surface-overlay)] backdrop-blur-md border border-[var(--color-border)] p-2.5 rounded-[20px] shadow-[var(--shadow-lg)] flex select-none [-webkit-touch-callout:none]"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex space-x-1">
-              {EMOJIS.map(e => (
-                <button 
-                  key={e}
-                  aria-label={`React with ${e}`}
-                  className="text-[26px] hover:scale-110 transition-transform active:scale-95 w-10 h-10 flex items-center justify-center"
-                  onClick={() => toggleReaction(activeReactionId, e)}
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        </div>
+        <>
+          <div 
+            className="fixed inset-0 z-[300000] bg-black/20 dark:bg-black/40"
+            onClick={() => setActiveReactionId(null)}
+          />
+          <div className="fixed inset-0 z-[500000] pointer-events-none">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: 'absolute',
+                top: activeReactionPos ? Math.max(70, activeReactionPos.top - 60) : '50%',
+                left: activeReactionPos ? (activeReactionPos.isMe ? 'auto' : '16px') : '50%',
+                right: activeReactionPos ? (activeReactionPos.isMe ? '16px' : 'auto') : 'auto',
+                transform: activeReactionPos ? 'none' : 'translate(-50%, -50%)'
+              }}
+              className="bg-[var(--color-surface-overlay)] backdrop-blur-md border border-[var(--color-border)] p-2.5 rounded-[20px] shadow-[var(--shadow-lg)] flex select-none [-webkit-touch-callout:none] pointer-events-auto"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex space-x-1">
+                {EMOJIS.map(e => (
+                  <button 
+                    key={e}
+                    aria-label={`React with ${e}`}
+                    className="text-[26px] hover:scale-110 transition-transform active:scale-95 w-10 h-10 flex items-center justify-center"
+                    onClick={() => toggleReaction(activeReactionId, e)}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </>
       )}
 
       <NetworkBanner />
@@ -257,6 +263,9 @@ export function ChatRoom() {
                 key={vItem.key}
                 data-index={vItem.index}
                 ref={virtualizer.measureElement}
+                onClick={() => {
+                  if (activeReactionId) setActiveReactionId(null);
+                }}
                 className={cn(
                   "absolute top-0 left-0 w-full flex py-0.5", // Reduced y-padding for grouping
                   item.isGroupStart && "pt-2",
