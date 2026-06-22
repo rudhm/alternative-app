@@ -152,8 +152,9 @@ export const MessageBubble = React.memo(({
       {msg.media?.map((m: any, i: number) => {
         const getMediaUrl = (url: string) => {
           if (url.startsWith('http') || url.startsWith('blob:')) return url;
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://rudhasi.mooo.com";
-          return `${apiUrl}${url}`;
+          const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "https://rudhasi.mooo.com").replace(/\/$/, "");
+          const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+          return `${apiUrl}${cleanUrl}`;
         };
         const mediaUrl = getMediaUrl(m.url);
         
