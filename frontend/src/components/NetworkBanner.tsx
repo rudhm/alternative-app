@@ -9,7 +9,7 @@ export function NetworkBanner() {
 
   return (
     <AnimatePresence>
-      {(status === "disconnected" || status === "connecting" || status === "syncing") && (
+      {(status === "disconnected" || status === "connecting") && (
         <motion.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
@@ -19,11 +19,10 @@ export function NetworkBanner() {
           `}
         >
           {status === "disconnected" && <WifiOff size={14} />}
-          {(status === "connecting" || status === "syncing") && <Loader2 size={14} className="animate-spin" />}
+          {status === "connecting" && <Loader2 size={14} className="animate-spin" />}
           <span>
             {status === "disconnected" && "Waiting for network..."}
             {status === "connecting" && "Connecting..."}
-            {status === "syncing" && "Syncing offline messages..."}
           </span>
         </motion.div>
       )}
