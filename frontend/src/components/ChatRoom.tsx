@@ -84,35 +84,55 @@ export function ChatRoom() {
 
   const items = useMemo(() => {
     const newItems: any[] = [];
-    let lastDateStr = "";
+    let lastDateKey = "";
+
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const yesterdayKey = `${yesterday.getFullYear()}-${yesterday.getMonth()}-${yesterday.getDate()}`;
 
     messages.forEach((msg, i) => {
-      const d = new Date(msg.createdAt);
-      const dateStr = d.toLocaleDateString();
+      const msgTime = new Date(msg.createdAt).getTime();
+      const d = new Date(msgTime);
+      const dateKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
-      if (dateStr !== lastDateStr) {
-        const now = new Date();
-        const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        let label = dateStr;
-        if (isToday) {
+      if (dateKey !== lastDateKey) {
+        let label = "";
+        if (dateKey === todayKey) {
           label = "Today";
+        } else if (dateKey === yesterdayKey) {
+          label = "Yesterday";
         } else {
-          const yesterday = new Date(now);
-          yesterday.setDate(now.getDate() - 1);
-          if (d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear()) {
-            label = "Yesterday";
-          }
+          label = d.toLocaleDateString();
         }
 
-        newItems.push({ type: "date_separator", id: `date-${dateStr}`, label });
-        lastDateStr = dateStr;
+        newItems.push({ type: "date_separator", id: `date-${dateKey}`, label });
+        lastDateKey = dateKey;
       }
 
-      const prevMsg = i > 0 ? messages[i-1] : null;
-      const nextMsg = i < messages.length - 1 ? messages[i+1] : null;
+      const prevMsg = i > 0 ? messages[i - 1] : null;
+      const nextMsg = i < messages.length - 1 ? messages[i + 1] : null;
 
-      const isGroupStart = !prevMsg || prevMsg.authorId !== msg.authorId || new Date(msg.createdAt).getTime() - new Date(prevMsg.createdAt).getTime() > 5 * 60 * 1000 || new Date(prevMsg.createdAt).toLocaleDateString() !== dateStr;
-      const isGroupEnd = !nextMsg || nextMsg.authorId !== msg.authorId || new Date(nextMsg.createdAt).getTime() - new Date(msg.createdAt).getTime() > 5 * 60 * 1000 || new Date(nextMsg.createdAt).toLocaleDateString() !== dateStr;
+      let isGroupStart = true;
+      if (prevMsg && prevMsg.authorId === msg.authorId) {
+        const prevTime = new Date(prevMsg.createdAt).getTime();
+        const prevD = new Date(prevTime);
+        const prevDateKey = `${prevD.getFullYear()}-${prevD.getMonth()}-${prevD.getDate()}`;
+        if (msgTime - prevTime <= 5 * 60 * 1000 && prevDateKey === dateKey) {
+          isGroupStart = false;
+        }
+      }
+
+      let isGroupEnd = true;
+      if (nextMsg && nextMsg.authorId === msg.authorId) {
+        const nextTime = new Date(nextMsg.createdAt).getTime();
+        const nextD = new Date(nextTime);
+        const nextDateKey = `${nextD.getFullYear()}-${nextD.getMonth()}-${nextD.getDate()}`;
+        if (nextTime - msgTime <= 5 * 60 * 1000 && nextDateKey === dateKey) {
+          isGroupEnd = false;
+        }
+      }
 
       newItems.push({ ...msg, isGroupStart, isGroupEnd });
     });
@@ -171,7 +191,7 @@ export function ChatRoom() {
 
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-[var(--color-bg)] overflow-hidden relative text-[var(--color-text)] transition-colors duration-300">
-      <div className="flex-none bg-[var(--color-surface-raised)] backdrop-blur-md px-4 h-16 flex items-center justify-between z-[200000] border-b border-[var(--color-border)] transition-colors duration-300">
+      <div className="flex-none bg-[var(--color-surface-raised)] px-4 h-16 flex items-center justify-between z-[200000] border-b border-[var(--color-border)] transition-colors duration-300">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 rounded-full bg-[var(--color-accent)] flex items-center justify-center font-semibold text-sm text-white shadow-[var(--shadow-sm)]">
             {customOtherName ? customOtherName.charAt(0).toUpperCase() : (userId === "Hasi" ? "R" : "H")}
@@ -258,7 +278,7 @@ export function ChatRoom() {
                 right: activeReactionPos ? (activeReactionPos.isMe ? '16px' : 'auto') : 'auto',
                 transform: activeReactionPos ? 'none' : 'translate(-50%, -50%)'
               }}
-              className="bg-[var(--color-surface-overlay)] backdrop-blur-md border border-[var(--color-border)] p-2.5 rounded-[20px] shadow-[var(--shadow-lg)] flex select-none [-webkit-touch-callout:none] pointer-events-auto"
+              className="bg-[var(--color-surface-overlay)] border border-[var(--color-border)] p-2.5 rounded-[20px] shadow-[var(--shadow-lg)] flex select-none [-webkit-touch-callout:none] pointer-events-auto"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex space-x-1">
@@ -287,9 +307,9 @@ export function ChatRoom() {
       >
         {isLoadingMore && (
           <div className="flex flex-col py-4 space-y-4 px-2 animate-pulse w-full pointer-events-none">
-            <div className="self-start bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-2xl rounded-tl-sm w-3/4 max-w-[260px] h-12 opacity-60 shadow-sm backdrop-blur-sm" />
+            <div className="self-start bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-2xl rounded-tl-sm w-3/4 max-w-[260px] h-12 opacity-60 shadow-sm" />
             <div className="self-end bg-[var(--color-accent)] rounded-2xl rounded-tr-sm w-2/3 max-w-[220px] h-10 opacity-20 shadow-sm" />
-            <div className="self-start bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-2xl rounded-tl-sm w-1/2 max-w-[180px] h-16 opacity-60 shadow-sm backdrop-blur-sm" />
+            <div className="self-start bg-[var(--color-surface-raised)] border border-[var(--color-border)] rounded-2xl rounded-tl-sm w-1/2 max-w-[180px] h-16 opacity-60 shadow-sm" />
           </div>
         )}
         <div
@@ -311,7 +331,7 @@ export function ChatRoom() {
                   className="absolute top-0 left-0 w-full flex justify-center py-2"
                   style={{ transform: `translateY(${vItem.start}px)` }}
                 >
-                  <span className="bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-secondary)] text-xs font-medium px-3 py-1 rounded-full shadow-sm backdrop-blur-md">
+                  <span className="bg-[var(--color-surface-raised)] border border-[var(--color-border)] text-[var(--color-text-secondary)] text-xs font-medium px-3 py-1 rounded-full shadow-sm">
                     {item.label}
                   </span>
                 </div>

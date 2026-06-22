@@ -10,112 +10,39 @@ import { Playfair_Display, Inter } from "next/font/google";
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["400", "500", "600"] });
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500"] });
 
-// Canvas Starfield Component
+// Pure CSS Starfield for better battery and performance
 const Starfield = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [stars, setStars] = useState<{ id: number; x: number; y: number; r: number; dur: number }[]>([]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    let stars: { x: number; y: number; r: number; opacity: number; speed: number; pulse: number }[] = [];
-    let shootingStars: { x: number; y: number; len: number; speed: number; opacity: number }[] = [];
-
-    const resize = () => {
-      // Use visual viewport, but cap resolution for mobile performance
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // Cap DPR at 1.5
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width = window.innerWidth + 'px';
-      canvas.style.height = window.innerHeight + 'px';
-      ctx.scale(dpr, dpr);
-      initStars();
-    };
-
-    const initStars = () => {
-      stars = [];
-      // Cap max stars to 150 for massive performance boost on mobile
-      const numStars = Math.min(150, Math.floor((window.innerWidth * window.innerHeight) / 6000));
-      for (let i = 0; i < numStars; i++) {
-        stars.push({
-          x: Math.random() * window.innerWidth,
-          y: Math.random() * window.innerHeight,
-          r: Math.random() * 1.2 + 0.3, // Smaller radius
-          opacity: Math.random(),
-          speed: Math.random() * 0.03 + 0.01,
-          pulse: Math.random() * 0.03 + 0.01,
-        });
-      }
-    };
-
-    const draw = () => {
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
-      // Twinkling background stars
-      ctx.fillStyle = "rgba(255, 220, 240, 0.8)";
-      stars.forEach((s) => {
-        s.opacity += s.pulse;
-        if (s.opacity > 1 || s.opacity < 0.2) s.pulse = -s.pulse;
-        s.y -= s.speed;
-        if (s.y < 0) {
-          s.y = window.innerHeight;
-          s.x = Math.random() * window.innerWidth;
-        }
-
-        ctx.globalAlpha = s.opacity;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      // Occasional shooting stars
-      if (Math.random() < 0.005) {
-        shootingStars.push({
-          x: Math.random() * window.innerWidth,
-          y: 0,
-          len: Math.random() * 50 + 20,
-          speed: Math.random() * 8 + 8,
-          opacity: 1,
-        });
-      }
-
-      ctx.lineWidth = 1;
-      for (let i = shootingStars.length - 1; i >= 0; i--) {
-        const ss = shootingStars[i];
-        ss.x -= ss.speed;
-        ss.y += ss.speed;
-        ss.opacity -= 0.03;
-
-        if (ss.opacity <= 0) {
-          shootingStars.splice(i, 1);
-          continue;
-        }
-
-        ctx.globalAlpha = ss.opacity;
-        ctx.strokeStyle = "#ffe6fa";
-        ctx.beginPath();
-        ctx.moveTo(ss.x, ss.y);
-        ctx.lineTo(ss.x + ss.len, ss.y - ss.len);
-        ctx.stroke();
-      }
-
-      animationFrameId = requestAnimationFrame(draw);
-    };
-
-    window.addEventListener("resize", resize);
-    resize();
-    draw();
-
-    return () => {
-      window.removeEventListener("resize", resize);
-      cancelAnimationFrame(animationFrameId);
-    };
+    const numStars = Math.min(100, Math.floor((window.innerWidth * window.innerHeight) / 8000));
+    const newStars = Array.from({ length: numStars }).map((_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      r: Math.random() * 1.5 + 0.5,
+      dur: Math.random() * 3 + 2,
+    }));
+    setStars(newStars);
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none opacity-50" />;
+  return (
+    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-50">
+      {stars.map((s) => (
+        <div
+          key={s.id}
+          className="absolute bg-[#ffe6fa] rounded-full animate-pulse"
+          style={{
+            left: `${s.x}%`,
+            top: `${s.y}%`,
+            width: `${s.r}px`,
+            height: `${s.r}px`,
+            animationDuration: `${s.dur}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
 };
 
 export default function Home() {
