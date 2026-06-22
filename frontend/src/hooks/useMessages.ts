@@ -309,7 +309,7 @@ export function useMessages({
               reject(new Error("Invalid JSON response"));
             }
           } else {
-            reject(new Error("Upload failed"));
+            reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.statusText} - ${xhr.responseText.substring(0, 50)}`));
           }
         };
 
@@ -339,7 +339,7 @@ export function useMessages({
         next[idx] = { ...next[idx], pending: false, failed: true, uploadProgress: undefined };
         return next;
       });
-      URL.revokeObjectURL(placeholderUrl);
+      // Do not revoke the placeholder URL here so the user can still see which image failed to upload.
     }
   }, [sendMessage, userId, token]);
 
