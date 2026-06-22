@@ -1,6 +1,6 @@
 import React, { useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Reply } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MessageBubbleProps {
@@ -111,6 +111,7 @@ export const MessageBubble = React.memo(({
   }, [handlePressEnd, msg, onSetReplyingTo, onVibrate]);
 
   return (
+    <div className={cn("relative flex group items-center w-full max-w-full", isMe ? "justify-end" : "justify-start")}>
     <div 
       ref={bubbleRef}
       className={cn(
@@ -214,6 +215,21 @@ export const MessageBubble = React.memo(({
           ))}
         </div>
       )}
+    </div>
+    
+    {/* Desktop Hover Reply Button */}
+    <div className={cn(
+      "hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity items-center px-1",
+      isMe ? "order-first" : "order-last"
+    )}>
+      <button
+        onClick={() => onSetReplyingTo(msg)}
+        className="p-1.5 rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-accent)] bg-[var(--color-surface-raised)]/50 hover:bg-[var(--color-surface-raised)] shadow-sm border border-transparent hover:border-[var(--color-border)] transition-all cursor-pointer"
+        title="Reply"
+      >
+        <Reply size={15} />
+      </button>
+    </div>
     </div>
   );
 }, (prev, next) => {
