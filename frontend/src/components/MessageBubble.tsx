@@ -149,13 +149,21 @@ export const MessageBubble = React.memo(({
           <span className="truncate">{msg.replyTo.content || "Media"}</span>
         </div>
       )}
-      {msg.media?.map((m: any, i: number) => (
-        <div key={i} className="mb-2 relative">
-          {m.type === 'image' ? (
-            <img src={m.url} alt="media" className="rounded-lg max-w-full min-h-[200px] max-h-64 object-cover border border-white/10" />
-          ) : (
-            <a href={m.url} target="_blank" rel="noreferrer" className="block text-sm break-all underline decoration-current/30 underline-offset-4">{m.url}</a>
-          )}
+      {msg.media?.map((m: any, i: number) => {
+        const getMediaUrl = (url: string) => {
+          if (url.startsWith('http') || url.startsWith('blob:')) return url;
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://rudhasi.mooo.com";
+          return `${apiUrl}${url}`;
+        };
+        const mediaUrl = getMediaUrl(m.url);
+        
+        return (
+          <div key={i} className="mb-2 relative">
+            {m.type === 'image' ? (
+              <img src={mediaUrl} alt="media" className="rounded-lg max-w-full min-h-[200px] max-h-64 object-cover border border-white/10" />
+            ) : (
+              <a href={mediaUrl} target="_blank" rel="noreferrer" className="block text-sm break-all underline decoration-current/30 underline-offset-4">{mediaUrl}</a>
+            )}
           {msg.uploadProgress !== undefined && msg.pending && (
             <motion.div 
               initial={{ opacity: 0 }} 
@@ -183,7 +191,8 @@ export const MessageBubble = React.memo(({
             </motion.div>
           )}
         </div>
-      ))}
+        );
+      })}
       <div className="flex flex-row items-end justify-between gap-3 mt-0.5 min-w-0">
         <p className="break-words whitespace-pre-wrap min-w-0">{msg.content}</p>
         <div className={cn("flex items-center text-xs space-x-1 font-medium flex-shrink-0 pt-1", isMe ? "text-white/70" : "text-[var(--color-text-muted)]")}>
