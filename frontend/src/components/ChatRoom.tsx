@@ -192,10 +192,19 @@ export function ChatRoom() {
 
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-[var(--color-bg)] overflow-hidden relative text-[var(--color-text)] transition-colors duration-300">
-      <div className="flex-none bg-[var(--color-surface-raised)] px-4 h-16 flex items-center justify-between z-[200000] border-b border-[var(--color-border)] transition-colors duration-300">
+      <div className="absolute top-0 w-full bg-[var(--color-bg)]/60 backdrop-blur-xl px-4 h-16 flex items-center justify-between z-[200000] border-b border-[var(--color-border)]/50 transition-colors duration-300">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-full bg-[var(--color-accent)] flex items-center justify-center font-semibold text-sm text-white shadow-[var(--shadow-sm)]">
-            {customOtherName ? customOtherName.charAt(0).toUpperCase() : (userId === "Hasi" ? "R" : "H")}
+          <div className="relative">
+            {otherStatus === "online" && (
+              <motion.div 
+                animate={{ opacity: [0.4, 0.8, 0.4], scale: [1, 1.15, 1] }} 
+                transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+                className="absolute inset-0 bg-green-500 rounded-full blur-sm z-0" 
+              />
+            )}
+            <div className="relative z-10 w-9 h-9 rounded-full bg-[var(--color-accent)] flex items-center justify-center font-semibold text-sm text-white shadow-sm border border-white/10">
+              {customOtherName ? customOtherName.charAt(0).toUpperCase() : (userId === "Hasi" ? "R" : "H")}
+            </div>
           </div>
           <div>
             {isEditingName ? (
@@ -303,7 +312,7 @@ export function ChatRoom() {
 
       <div 
         ref={parentRef}
-        className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 pb-2 select-none [-webkit-touch-callout:none]" style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}
+        className="flex-1 overflow-y-auto px-3 sm:px-4 pt-[76px] pb-2 select-none [-webkit-touch-callout:none]" style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}
         onScroll={handleScroll}
       >
         {isLoadingMore && (

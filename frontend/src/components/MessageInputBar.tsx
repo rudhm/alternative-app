@@ -23,6 +23,7 @@ export const MessageInputBar = React.memo(({
   onFocus,
 }: MessageInputBarProps) => {
   const [text, setText] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,7 +89,10 @@ export const MessageInputBar = React.memo(({
 
 
         <div 
-          className="flex items-end w-full min-h-[52px] px-2 py-1.5 rounded-[26px] border border-[var(--color-border-strong)] shadow-[var(--shadow-lg)] bg-[var(--color-surface-raised)] backdrop-blur-2xl relative z-10 transition-shadow duration-300"
+          className={cn(
+            "flex items-end w-full min-h-[52px] px-2 py-1.5 rounded-[26px] border shadow-[var(--shadow-lg)] bg-[var(--color-surface-raised)] backdrop-blur-2xl relative z-10 transition-all duration-300",
+            isFocused ? "border-[var(--color-accent)] ring-[3px] ring-[var(--color-accent)]/20 shadow-[0_0_20px_rgba(var(--color-accent-rgb),0.15)]" : "border-[var(--color-border-strong)]"
+          )}
         >
           <button 
             aria-label="Attach file"
@@ -121,7 +125,11 @@ export const MessageInputBar = React.memo(({
             placeholder="Message..."
             value={text}
             onChange={handleInput}
-            onFocus={onFocus}
+            onFocus={() => {
+              setIsFocused(true);
+              onFocus?.();
+            }}
+            onBlur={() => setIsFocused(false)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -137,11 +145,18 @@ export const MessageInputBar = React.memo(({
             onMouseDown={(e) => e.preventDefault()}
             aria-label="Send message"
             className={cn(
-              "w-9 h-9 ml-1 mb-1 rounded-full flex items-center justify-center transition-all active:scale-[0.94] flex-shrink-0",
-              text.trim() ? "bg-[var(--color-accent)] text-white shadow-[var(--shadow-sm)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-accent)]"
+              "w-9 h-9 ml-1 mb-1 rounded-full flex items-center justify-center transition-all flex-shrink-0 group relative overflow-hidden",
+              text.trim() ? "bg-[var(--color-accent)] text-white shadow-[var(--shadow-sm)] active:scale-90" : "text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] active:scale-[0.94]"
             )}
           >
-            <Send size={16} className={cn(text.trim() && "ml-0.5")} />
+            {text.trim() && (
+              <motion.div 
+                layoutId="send-glow"
+                className="absolute inset-0 bg-white/20 blur-md rounded-full"
+                transition={{ duration: 0.2 }}
+              />
+            )}
+            <Send size={16} className={cn("relative z-10", text.trim() && "ml-0.5 group-active:translate-x-1 group-active:-translate-y-1 transition-transform duration-200")} />
           </button>
         </div>
       </div>
