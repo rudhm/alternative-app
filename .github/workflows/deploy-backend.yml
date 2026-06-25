@@ -44,4 +44,5 @@ jobs:
           script: |
             cd /home/ubuntu/cloud-messenger
             rm -f backend/test_telegram.ts
-            docker compose up -d --build backend
+            docker container rm -f cloud_messenger_db cloud_messenger_backend cloud_messenger_nginx || true
+            docker compose up -d --build
