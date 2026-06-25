@@ -130,7 +130,7 @@ export const MessageBubble = React.memo(({
         </div>
       )}
 
-      <div className={cn("flex flex-col w-full max-w-[82%] sm:max-w-[72%]", isMe ? "items-end" : "items-start")}>
+      <div className={cn("flex flex-col max-w-[82%] sm:max-w-[72%]", isMe ? "items-end" : "items-start")}>
         <div 
           ref={bubbleRef}
           className={cn(
