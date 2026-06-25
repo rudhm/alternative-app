@@ -295,29 +295,31 @@ export const MessageBubble = React.memo(({
     </div>
         
         {/* Timestamp and Status Outside Bubble */}
-        <div className={cn("flex items-center gap-1 mt-1 mb-1 text-[10px] text-[var(--color-text-muted)] font-medium", isMe ? "mr-1" : "ml-1", !isGroupEnd && "hidden")}>
-          <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-          {isMe && (
-            <span className="flex items-center ml-0.5 text-[12px]">
-              {msg.failed ? (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRetryMessage(msg); }}
-                  aria-label="Retry sending message"
-                  className="flex items-center space-x-0.5 text-red-500 hover:text-red-400 transition-colors"
-                >
-                  <RotateCcw size={10} />
-                  <span className="text-[10px]">Failed</span>
-                </button>
-              ) : msg.pending ? (
-                <span className="opacity-70 text-[var(--color-text-muted)]">◷</span>
-              ) : msg.readReceipt ? (
-                <motion.span key="read" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="text-[var(--color-accent)] font-bold leading-none">✓✓</motion.span>
-              ) : (
-                <motion.span key="sent" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="opacity-70 leading-none">✓</motion.span>
-              )}
-            </span>
-          )}
-        </div>
+        {(isGroupEnd || msg.pending || msg.failed) && (
+          <div className={cn("flex items-center gap-1 mt-1 mb-1 text-[10px] text-[var(--color-text-muted)] font-medium", isMe ? "mr-1" : "ml-1")}>
+            <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            {isMe && (
+              <span className="flex items-center ml-0.5 text-[12px]">
+                {msg.failed ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onRetryMessage(msg); }}
+                    aria-label="Retry sending message"
+                    className="flex items-center space-x-0.5 text-red-500 hover:text-red-400 transition-colors"
+                  >
+                    <RotateCcw size={10} />
+                    <span className="text-[10px]">Failed</span>
+                  </button>
+                ) : msg.pending ? (
+                  <span className="opacity-70 text-[var(--color-text-muted)]">◷</span>
+                ) : msg.readReceipt ? (
+                  <motion.span key="read" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="text-[var(--color-accent)] font-bold leading-none">✓✓</motion.span>
+                ) : (
+                  <motion.span key="sent" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="opacity-70 leading-none">✓</motion.span>
+                )}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Desktop Hover Reply Button (isMe = true) */}
