@@ -197,9 +197,9 @@ export function ChatRoom() {
           <div className="relative">
             {otherStatus === "online" && (
               <motion.div 
-                animate={{ opacity: [0.4, 0.8, 0.4], scale: [1, 1.15, 1] }} 
+                animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.25, 1] }} 
                 transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-                className="absolute inset-0 bg-green-500 rounded-full blur-sm z-0" 
+                className="absolute inset-0 bg-green-500 rounded-full z-0" 
               />
             )}
             <div className="relative z-10 w-9 h-9 rounded-full bg-[var(--color-accent)] flex items-center justify-center font-semibold text-sm text-white shadow-sm border border-white/10">
@@ -368,7 +368,7 @@ export function ChatRoom() {
                 style={{
                   transform: `translateY(${vItem.start}px)`,
                   zIndex: activeReactionId === item.originalMsg?.id ? 400000 : 100000 - vItem.index,
-                  contain: "layout",
+                  contain: "content",
                 }}
               >
                 <MessageBubble 
