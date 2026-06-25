@@ -295,7 +295,7 @@ export const MessageBubble = React.memo(({
     </div>
         
         {/* Timestamp and Status Outside Bubble */}
-        <div className={cn("flex items-center gap-1 mt-1 mb-1 text-[10px] text-[var(--color-text-muted)] font-medium", isMe ? "mr-1" : "ml-1", !isGroupEnd && "invisible")}>
+        <div className={cn("flex items-center gap-1 mt-1 mb-1 text-[10px] text-[var(--color-text-muted)] font-medium", isMe ? "mr-1" : "ml-1", !isGroupEnd && "hidden")}>
           <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           {isMe && (
             <span className="flex items-center ml-0.5 text-[12px]">
