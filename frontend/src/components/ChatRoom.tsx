@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useWs } from "@/components/WsProvider";
 import { NetworkBanner } from "@/components/NetworkBanner";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Sun, Moon, ChevronDown } from "lucide-react";
+import { Sun, Moon, ChevronDown, Folder } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { MessageBubble } from "./MessageBubble";
@@ -270,13 +270,27 @@ export function ChatRoom() {
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setIsDark(!isDark)}
-          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors shadow-[var(--shadow-sm)]"
-        >
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            aria-label={isSidebarOpen ? 'Close folders sidebar' : 'Open folders sidebar'}
+            className={cn(
+              "w-9 h-9 flex items-center justify-center rounded-full border transition-colors shadow-[var(--shadow-sm)]",
+              isSidebarOpen 
+                ? "bg-[var(--color-accent)] border-[var(--color-accent)] text-white" 
+                : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+            )}
+          >
+            <Folder size={18} />
+          </button>
+          <button
+            onClick={() => setIsDark(!isDark)}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors shadow-[var(--shadow-sm)]"
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </div>
       </div>
       
       {activeReactionId && (
